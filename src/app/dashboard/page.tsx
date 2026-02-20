@@ -28,7 +28,7 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-gray-50 flex flex-col">
             <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
                 <h1 className="text-2xl font-bold text-gray-800">
-                    🤖 IG Auto-Responder Control Center
+                    🤖 IG Auto DM Responder
                 </h1>
             </header>
 
