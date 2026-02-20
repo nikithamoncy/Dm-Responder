@@ -47,19 +47,19 @@ create table if not exists knowledge_base_vectors (
   id uuid default gen_random_uuid() primary key,
   item_id uuid references knowledge_base_items(id) on delete cascade,
   content text not null,
-  embedding vector(768) -- Matches Gemini Embedding 001
+  embedding vector(3072) -- Matches Gemini Embedding 001 (3072 dims)
 );
 
 -- Index for fast search (IVFFlat is good for starter, HNSW is better but more complex to setup initially if empty)
 -- We use a simple index creation that won't fail if empty
+-- Index for fast search (HNSW is better for high dimensions and supported for >2000 dims via halfvec)
 create index if not exists knowledge_base_vectors_idx 
-on knowledge_base_vectors using ivfflat (embedding vector_cosine_ops)
-with (lists = 100);
+on knowledge_base_vectors using hnsw ((embedding::halfvec(3072)) halfvec_cosine_ops);
 
 
 -- 5. Match Function (RPC)
 create or replace function match_knowledge_base (
-  query_embedding vector(768),
+  query_embedding vector(3072),
   match_threshold float,
   match_count int
 )
