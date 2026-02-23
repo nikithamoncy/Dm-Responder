@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { getInstagramUserProfile } from '@/lib/instagram';
+import { getFacebookUserProfile } from '@/lib/messenger';
 import { processBotResponse } from '@/lib/bot-engine';
 
 // Environment variables
@@ -104,8 +105,16 @@ export async function POST(req: Request) {
                         }
 
                         // 1. Fetch User Profile
-                        console.log('[WEBHOOK-PROFILE] Fetching user profile...');
-                        const userProfile = await getInstagramUserProfile(senderId);
+                        const platform = body.object === 'page' ? 'messenger' : 'instagram';
+                        console.log(`[WEBHOOK-PROFILE] Fetching user profile for platform: ${platform}...`);
+
+                        let userProfile = null;
+                        if (platform === 'messenger') {
+                            userProfile = await getFacebookUserProfile(senderId);
+                        } else {
+                            userProfile = await getInstagramUserProfile(senderId);
+                        }
+
                         console.log('[WEBHOOK-PROFILE] Result:', userProfile ? 'Found' : 'Not Found');
 
                         // Upsert Conversation State
@@ -130,8 +139,8 @@ export async function POST(req: Request) {
 
                         // Process the message synchronously
                         try {
-                            console.log('[WEBHOOK-BOT] Triggering Bot Engine...');
-                            await processBotResponse(senderId, messageText);
+                            console.log(`[WEBHOOK-BOT] Triggering Bot Engine for ${platform}...`);
+                            await processBotResponse(senderId, messageText, false, platform);
                             console.log('[WEBHOOK-BOT] Bot Engine Completed Successfully.');
                         } catch (botError) {
                             console.error('[WEBHOOK-BOT-ERROR] Bot Engine Failed:', botError);

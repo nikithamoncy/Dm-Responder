@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { geminiModel, generateEmbedding } from '@/lib/gemini';
 import { sendInstagramMessage } from '@/lib/instagram';
+import { sendMessengerMessage } from '@/lib/messenger';
 
 interface BotResponseResult {
     replyText: string;
@@ -13,8 +14,9 @@ interface BotResponseResult {
  * @param userId - The user ID (Instagram IGSID or internal Playground ID)
  * @param userMessage - The message text
  * @param simulated - If true, does not send to Instagram or save to official history
+ * @param platform - The messaging platform ('instagram' or 'messenger')
  */
-export async function processBotResponse(userId: string, userMessage: string, simulated: boolean = false): Promise<BotResponseResult | null> {
+export async function processBotResponse(userId: string, userMessage: string, simulated: boolean = false, platform: 'instagram' | 'messenger' = 'instagram'): Promise<BotResponseResult | null> {
 
     // 0. CHECK PAUSED STATE (Human Takeover) - skip for simulated
     if (!simulated) {
@@ -160,11 +162,16 @@ YOUR REPLY:
         const duration = Date.now() - start;
         console.log(`[Gemini] Generated Reply for ${userId} in ${duration}ms: `, replyText);
 
-        // G. Send to Instagram (ONLY IF NOT SIMULATED)
+        // G. Send to Instagram/Messenger (ONLY IF NOT SIMULATED)
         if (!simulated) {
-            console.log(`[Instagram] Sending reply to ${userId}...`);
-            const sendResult = await sendInstagramMessage(userId, replyText);
-            console.log(`[Instagram] Reply sent successfully: `, sendResult);
+            console.log(`[${platform === 'messenger' ? 'Messenger' : 'Instagram'}] Sending reply to ${userId}...`);
+            let sendResult;
+            if (platform === 'messenger') {
+                sendResult = await sendMessengerMessage(userId, replyText);
+            } else {
+                sendResult = await sendInstagramMessage(userId, replyText);
+            }
+            console.log(`[${platform === 'messenger' ? 'Messenger' : 'Instagram'}] Reply sent successfully: `, sendResult);
         }
 
         // H. Save Assistant Reply to History (Background)
